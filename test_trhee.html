@@ -15,7 +15,6 @@
 			var scene = new THREE.Scene();
 			camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.2, 1000 );
   			camera.position.z = 2.5;
-    		camera.lookAt(0,0,0);
 			var renderer = new THREE.WebGLRenderer();
 			renderer.setSize( window.innerWidth-5, window.innerHeight-5 );
 			window.addEventListener( 'resize', onWindowResize, false );
@@ -33,7 +32,6 @@
 			{
 				var horizontal=vertical=Math.pow(2,zoom);
 				var geometry   = new THREE.SphereGeometry(1, horizontal, vertical);
-
 				var material  = new THREE.MeshBasicMaterial();
 				THREE.ImageUtils.crossOrigin = '';
 	/*			material.wireframe = true
@@ -49,8 +47,9 @@
 						texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
 						texture.repeat.set( horizontal, vertical );
 						var material1 = new THREE.MeshBasicMaterial( { map:texture});
-	//					material1.wireframe= true;
+						// material1.wireframe= true;
 						materials.push(  material1);
+						if(j==0)i++;
 					}
 
 
@@ -62,12 +61,14 @@
 					
 				    var k = 2 * index;
 				    if(k>=2*l){
-						console.warn("last face");
-						break;	
-					} 
+							break;	
+						} 
 	//			    console.log(index,i,j);
+
 				    geometry.faces[ k ].materialIndex = index ;
-				    geometry.faces[ k + 1 ].materialIndex =index ;
+	if(j!=0 && j!=vertical-1){
+				      geometry.faces[ k + 1 ].materialIndex =index ;
+				    }
 				}
 
 				var earthMesh = new THREE.Mesh(geometry,new THREE.MeshFaceMaterial(materials));
@@ -95,10 +96,9 @@
 
 			function render() {
 //				console.log(camera.position,distance(camera.position.x,camera.position.y,camera.position.z,0,0,0));
-			
 				requestAnimationFrame( render );
 				renderer.render( scene, camera );
-					if(zoom!=5 && distance(camera.position.x,camera.position.y,camera.position.z,0,0,0)<=2){
+				if(zoom!=5 && distance(camera.position.x,camera.position.y,camera.position.z,0,0,0)<=2){
 					console.error("yuppi");
 					zoom=5;
 					drawEarth();
