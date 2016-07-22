@@ -25,7 +25,7 @@
 // Simple substitute "OrbitControls" and the control should work as-is.
 
 THREE.OrbitControls = function ( object, domElement, localElement ) {
-
+	this.changed=false;
 	this.object = object;
 	this.domElement = ( domElement !== undefined ) ? domElement : document;
 	this.localElement = ( localElement !== undefined ) ? localElement : document;
@@ -285,7 +285,6 @@ THREE.OrbitControls = function ( object, domElement, localElement ) {
 	}
 
 	function onMouseDown( event ) {
-
 		if ( scope.enabled === false ) { return; }
 		event.preventDefault();
 
@@ -414,7 +413,7 @@ THREE.OrbitControls = function ( object, domElement, localElement ) {
 			scope.dollyIn();
 
 		}
-
+		scope.update();
 	}
 
 	function onKeyDown( event ) {
