@@ -1,6 +1,3 @@
-/**
- * Created by Alex on 01.04.2016.
- */
 var scene = new THREE.Scene();
 camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.0001, 100);
 camera.position.z = 2.5;
@@ -28,8 +25,9 @@ window.onload = function init() {
     this.addEventListener('mousedown', onMouseDown, false);
     D = getCoordinatesOfTiles();
     drawEarth();
-      DrawRectangle(new THREE.Vector2(53,	-9), new THREE.Vector2(65,-30));
- 	//    DrawRectangle(new THREE.Vector2(5,5),new THREE.Vector2(-40,-40));
+     DrawRectangle(new THREE.Vector2(53,	-9), new THREE.Vector2(65,-30));
+    //    DrawRectangle(new THREE.Vector2(5,5),new THREE.Vector2(-40,-40));
+    // drawRoad(new THREE.Vector2(53, -9), new THREE.Vector2(65, -30));
     render();
 };
 
@@ -67,6 +65,11 @@ function in_array(value, array) {
     return false;
 }
 
+/**
+ * проверка, попадает ли геометрия в камеру
+ * @param geometry
+ * @returns {boolean|*}
+ */
 function checkIt(geometry) {
     //check if we should draw it===============================//
     camera.updateMatrixWorld(); // make sure the camera matrix is updated
@@ -76,64 +79,74 @@ function checkIt(geometry) {
     edges = geometry.faces[0].normal;
     return (edges.angleTo(camera.position) < Math.PI / 2 && frustum.intersectsObject(squareMesh));
 }
-function hslToRgb(h, s, l){
+
+/**
+ *  протстой перевод из hsl в rgb
+ * @param h
+ * @param s
+ * @param l
+ * @returns {THREE.Vector3}
+ */
+function hslToRgb(h, s, l) {
     var r, g, b;
 
-    if(s == 0){
+    if (s == 0) {
         r = g = b = l; // achromatic
-    }else{
-        var hue2rgb = function hue2rgb(p, q, t){
-            if(t < 0) t += 1;
-            if(t > 1) t -= 1;
-            if(t < 1/6) return p + (q - p) * 6 * t;
-            if(t < 1/2) return q;
-            if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+    } else {
+        var hue2rgb = function hue2rgb(p, q, t) {
+            if (t < 0) t += 1;
+            if (t > 1) t -= 1;
+            if (t < 1 / 6) return p + (q - p) * 6 * t;
+            if (t < 1 / 2) return q;
+            if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
             return p;
         }
-        h=h/360;
+        h = h / 360;
         var q = l < 0.5 ? l * (1.0 + s) : l + s - l * s;
         var p = 2.0 * l - q;
-        r = hue2rgb(p, q, h + 1/3);
+        r = hue2rgb(p, q, h + 1 / 3);
         g = hue2rgb(p, q, h);
-        b = hue2rgb(p, q, h - 1/3);
+        b = hue2rgb(p, q, h - 1 / 3);
     }
     return new THREE.Vector3(Math.round(r * 255), Math.round(g * 255), Math.round(b * 255));
 }
 
-function valueToHSL(value){
+//значение в hsl
+function valueToHSL(value) {
     var h = (1.0 - value) * 240
-    return  h;
+    return h;
 }
 
-function ToColor(data,opacity){
+// массив в хитмап
+function ToColor(data, opacity) {
 // ,color1,color2) {
 //     if(typeof (data)!="array" || typeof (color1)!="THREE.Vector3" || typeof (color2)!="THREE.Vector3"){
 //         return -1;
 //     }
     opacity = typeof opacity !== 'undefined' ? opacity : 0.5;
-    Xmin=data[0];
-    Xmax=data[0];
-    var color=new Uint8Array(4*data.length);
-    for(i=1;i<data.length;i++){
-        if(Xmin>data[i]) {
+    Xmin = data[0];
+    Xmax = data[0];
+    var color = new Uint8Array(4 * data.length);
+    for (i = 1; i < data.length; i++) {
+        if (Xmin > data[i]) {
             Xmin = data[i];
         }
-        if(Xmax<data[i]){
-            Xmax=data[i];
+        if (Xmax < data[i]) {
+            Xmax = data[i];
         }
     }
-    for(i=0;i<data.length;i++){
-        data[i] -=Xmin;
+    for (i = 0; i < data.length; i++) {
+        data[i] -= Xmin;
     }
     ratio = Xmax / 1;
 
-    for ( i = 0; i < data.length; i++ ) {
-        temp_color = valueToHSL(data[i]/ratio);
-        temp_color = hslToRgb(temp_color,1,0.50);
-        color[4*i]=temp_color.x;
-        color[4*i+1]=temp_color.y;
-        color[4*i+2]=temp_color.z;
-        color[4*i+3]=opacity*255;
+    for (i = 0; i < data.length; i++) {
+        temp_color = valueToHSL(data[i] / ratio);
+        temp_color = hslToRgb(temp_color, 1, 0.50);
+        color[4 * i] = temp_color.x;
+        color[4 * i + 1] = temp_color.y;
+        color[4 * i + 2] = temp_color.z;
+        color[4 * i + 3] = opacity * 255;
     }
     return color;
     //ToDo: create some formula for color. it depends on color1,color2 and data, find min and max .
@@ -148,6 +161,20 @@ function ToColor(data,opacity){
     //     dummyRGBA[4 * i + 3] = opacity;
     // }
 
+}
+
+function drawRoad(point1, point2) {
+    var material = new THREE.LineBasicMaterial({
+        color: 0x0000ff
+    });
+    var geometry = new THREE.Geometry();
+    geometry.vertices.push(
+        new THREE.Vector3(GetCoordinates(point1.x, point1.y, 1)),
+        new THREE.Vector3(GetCoordinates(point2.x, point2.y, 1))
+    );
+    console.log(geometry);
+    var line = new THREE.Line(geometry, material);
+    scene.add(line);
 }
 function CoordinatesFromMercator(x, y) {
     var lon = (x / horizontal) * 360 - 180;
@@ -179,57 +206,57 @@ function DrawRectangle(point1, point2) {
     var ver_number_of_vertices = 2;
     var squareGeometry = new THREE.Geometry();
     var flag = false;
-    squareGeometry.vertices.push(GetCoordinates(x1, y1,1));
+    squareGeometry.vertices.push(GetCoordinates(x1, y1, 1));
     //filling first row (thin rects)
     //  console.log(D);
-    console.log(br,ul);
-    for (i = 0; i < vertical*xy_count; i++) {
-        for (j = horizontal*xy_count - 1; j >= 0; j--) {
-            if (D[i][j].x<=ul.x && D[i][j].y<=ul.y && D[i][j].x>=br.x && D[i][j].y>=br.y) {
+    console.log(br, ul);
+    for (i = 0; i < vertical * xy_count; i++) {
+        for (j = horizontal * xy_count - 1; j >= 0; j--) {
+            if (D[i][j].x <= ul.x && D[i][j].y <= ul.y && D[i][j].x >= br.x && D[i][j].y >= br.y) {
                 flag = true;
-                squareGeometry.vertices.push(GetCoordinates(ul.x, D[i][j].y,1));
+                squareGeometry.vertices.push(GetCoordinates(ul.x, D[i][j].y, 1));
                 // console.log(D[i][j].x, D[i][j].y);
                 hor_number_of_vertices++;
             }
         }
         if (flag) break;
     }
-    squareGeometry.vertices.push(GetCoordinates(x1, y2,1));
+    squareGeometry.vertices.push(GetCoordinates(x1, y2, 1));
     //first row completed
     //center;
     var x0, y0, x3, y3;
-    for (var i = 0; i < vertical*xy_count; i++) {
+    for (var i = 0; i < vertical * xy_count; i++) {
         if (D[i][0].x < ul.x && D[i][0].x > br.x) {
             ver_number_of_vertices++;
-            squareGeometry.vertices.push(GetCoordinates(D[i][0].x, ul.y,1));
-            for (var j = horizontal*xy_count - 1; j >= 0; j--)
+            squareGeometry.vertices.push(GetCoordinates(D[i][0].x, ul.y, 1));
+            for (var j = horizontal * xy_count - 1; j >= 0; j--)
                 if (D[i][j].y <= ul.y && D[i][j].y >= br.y) {
                     if (x0 == undefined) x0 = D[i][j].x;
                     if (y0 == undefined) y0 = D[i][j].y;
                     x3 = D[i][j].x;
                     y3 = D[i][j].y;
                     console.log(D[i][j].x, D[i][j].y);
-                    squareGeometry.vertices.push(GetCoordinates(D[i][j].x, D[i][j].y,1));
+                    squareGeometry.vertices.push(GetCoordinates(D[i][j].x, D[i][j].y, 1));
                 }
-            squareGeometry.vertices.push(GetCoordinates(D[i][0].x, br.y,1));
+            squareGeometry.vertices.push(GetCoordinates(D[i][0].x, br.y, 1));
         }
     }
     //center completed
     //last row
     flag = false;
-    squareGeometry.vertices.push(GetCoordinates(x2, y1,1));
-    for (var i = vertical*xy_count - 1; i >= 0; i--) {
-        for (var j = horizontal*xy_count - 1; j >= 0; j--) {
+    squareGeometry.vertices.push(GetCoordinates(x2, y1, 1));
+    for (var i = vertical * xy_count - 1; i >= 0; i--) {
+        for (var j = horizontal * xy_count - 1; j >= 0; j--) {
             //         console.log(D[i][j], br, ul);
 
-            if (D[i][j].x<=ul.x && D[i][j].y<=ul.y && D[i][j].x>=br.x && D[i][j].y>=br.y) {
+            if (D[i][j].x <= ul.x && D[i][j].y <= ul.y && D[i][j].x >= br.x && D[i][j].y >= br.y) {
                 flag = true;
-                squareGeometry.vertices.push(GetCoordinates(br.x, D[i][j].y,1));
+                squareGeometry.vertices.push(GetCoordinates(br.x, D[i][j].y, 1));
             }
         }
         if (flag) break;
     }
-    squareGeometry.vertices.push(GetCoordinates(x2, y2,1));
+    squareGeometry.vertices.push(GetCoordinates(x2, y2, 1));
     //vertices completed
 
     // faces
@@ -238,7 +265,7 @@ function DrawRectangle(point1, point2) {
             squareGeometry.faces.push(new THREE.Face3(i * hor_number_of_vertices + j + 1, i * hor_number_of_vertices + j, (i + 1) * hor_number_of_vertices + j));
             squareGeometry.faces.push(new THREE.Face3(i * hor_number_of_vertices + j + 1, (i + 1) * hor_number_of_vertices + j, (i + 1) * hor_number_of_vertices + j + 1));
         }
-    console.log(hor_number_of_vertices,ver_number_of_vertices);
+    console.log(hor_number_of_vertices, ver_number_of_vertices);
 
     //UVs
     var width = Math.abs(x2 - x1);
@@ -316,7 +343,7 @@ function DrawRectangle(point1, point2) {
             new THREE.Vector2(b_counter + bb, a_counter + aaa)
         ]);
         b_counter = b_counter + bb;
-        a_counter =a;
+        a_counter = a;
     }
     squareGeometry.faceVertexUvs[0].push([
         new THREE.Vector2(b_counter, a),
@@ -352,12 +379,12 @@ function DrawRectangle(point1, point2) {
         new THREE.Vector2(b_counter + bbb, a_counter),
         new THREE.Vector2(b_counter + bbb, a_counter + aaa)
     ]);
-  //  squareGeometry.computeFaceNormals();
+    //  squareGeometry.computeFaceNormals();
     //todo: change this to function
-    var dataX=160;
-    var dataY=160;
+    var dataX = 160;
+    var dataY = 160;
     var dummyRGBA = new Uint8Array(dataX * dataY * 4);
-    var dummy = new Array(dataX *dataY);
+    var dummy = new Array(dataX * dataY);
     // for (var i = 0; i < dataX * dataY; i++) {
     //     // RGB from 0 to 255
     //     dummyRGBA[4 * i] = dummyRGBA[4 * i + 1] = dummyRGBA[4 * i + 2] = 255 * i / (dataX * dataY);
@@ -367,17 +394,17 @@ function DrawRectangle(point1, point2) {
     for (var i = 0; i < dataX * dataY; i++) {
         // RGB from 0 to 255
         // dummy[i]= 255 * i / (dataX * dataY);
-        dummy[i]=Math.random();
+        dummy[i] = Math.random();
     }
-    dummyRGBA=ToColor(dummy,1);
+    dummyRGBA = ToColor(dummy, 1);
 
     dummyDataTex = new THREE.DataTexture(dummyRGBA, dataX, dataY, THREE.RGBAFormat);
     dummyDataTex.needsUpdate = true;
-    var material = new THREE.MeshBasicMaterial({map: dummyDataTex, wireframe:false,transparent: true, opacity: 1});// map: dummyDataTex, color:0x8080FF,
+    var material = new THREE.MeshBasicMaterial({map: dummyDataTex, wireframe: false, transparent: true, opacity: 1});// map: dummyDataTex, color:0x8080FF,
     material.depthWrite = false;
     material.depthTest = false;
     squareMesh = new THREE.Mesh(squareGeometry, material);
-    squareMesh.renderOrder=2;
+    squareMesh.renderOrder = 2;
     scene.add(squareMesh);
     squareMesh.renderOrder = 1;
 
@@ -451,8 +478,8 @@ function DrawMapRectangle(step, vert_step) {
 
         var texture = THREE.ImageUtils.loadTexture("http://b.tile.openstreetmap.org/" + zoom + "/" + j + "/" + i + ".png");
 
-        var material = new THREE.MeshBasicMaterial({map: texture, side: THREE.DoubleSide, wireframe: false});
-        // var material= new THREE.MeshBasicMaterial({wireframe:true});
+        // var material = new THREE.MeshBasicMaterial({map: texture, side: THREE.DoubleSide, wireframe: false});
+        var material = new THREE.MeshBasicMaterial({wireframe: true});
         squareMesh = new THREE.Mesh(squareGeometry, material);
 
         if (checkIt(squareGeometry)) {
@@ -469,7 +496,7 @@ function DrawMapRectangle(step, vert_step) {
 }
 
 function getCoordinatesOfTiles() {
-    horizontal = vertical = xy_count*Math.pow(2, zoom);
+    horizontal = vertical = xy_count * Math.pow(2, zoom);
     var D = new Array(horizontal);
     for (var j = 0; j < horizontal; j++) {
         D[j] = new Array(vertical);
@@ -511,7 +538,7 @@ function render() {
         clearScene(scene);
         D = getCoordinatesOfTiles();
         drawEarth();
-        DrawRectangle(new THREE.Vector2(53,	-9), new THREE.Vector2(65,-30));
+        DrawRectangle(new THREE.Vector2(53, -9), new THREE.Vector2(65, -30));
 
     }
 }
